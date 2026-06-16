@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spendly">
+<meta name="theme-color" content="#15110c">
+<title>Spendly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #15110c;
+  --bg-soft:   #1c1710;
+  --surface:   #221c14;
+  --surface2:  #2b2419;
+  --surface3:  #382f1f;
+  --line:      rgba(245,222,179,0.10);
+  --line2:     rgba(245,222,179,0.18);
+  --accent:    #f5a623;
+  --accent-deep:#e0851a;
+  --accent-soft:rgba(245,166,35,0.14);
+  --on-accent: #2a1c08;
+  --ink:       #f6efe2;
+  --ink2:      #c3b49c;
+  --ink3:      #8a7d68;
+  --danger:    #ff5d4f;
+  --danger-soft:rgba(255,93,79,0.15);
+  --positive:  #b8cd7e;
+  --radius:    18px;
+  --radius-sm: 12px;
+  --display:   'Fraunces', Georgia, serif;
+  --sans:      'Hanken Grotesk', system-ui, sans-serif;
+  --mono:      'JetBrains Mono', ui-monospace, monospace;
+  --safe-top:    env(safe-area-inset-top, 20px);
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(120% 60% at 85% -5%, rgba(245,166,35,0.10), transparent 60%),
+    radial-gradient(90% 50% at 0% 0%, rgba(255,93,79,0.05), transparent 55%);
+}
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; position: relative; z-index: 1; }
+.screen.active { display: flex; }
+
+.header { padding: calc(var(--safe-top) + 22px) 22px 14px; flex-shrink: 0; }
+.header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.wordmark { font-family: var(--display); font-size: 32px; font-weight: 600; letter-spacing: -0.5px; line-height: 1; }
+.header .sub { font-size: 13px; color: var(--ink2); margin-top: 6px; letter-spacing: 0.2px; }
+
+.scroll {
+  flex: 1; overflow-y: auto; padding: 0 16px;
+  padding-bottom: calc(110px + var(--safe-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+.back-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 14px; color: var(--accent); font-weight: 500;
+  background: none; border: none; cursor: pointer; padding: 6px 0; font-family: var(--sans);
+}
+.back-btn svg { width: 18px; height: 18px; }
+.icon-btn {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--ink); transition: transform 0.12s, background 0.15s; flex-shrink: 0;
+}
+.icon-btn:active { transform: scale(0.9); background: var(--surface3); }
+.icon-btn svg { width: 20px; height: 20px; }
+
+.fab {
+  position: fixed; bottom: calc(22px + var(--safe-bottom)); right: 20px;
+  width: 60px; height: 60px; border-radius: 50%;
+  background: linear-gradient(150deg, var(--accent), var(--accent-deep));
+  display: flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer; z-index: 20; color: var(--on-accent);
+  box-shadow: 0 8px 28px rgba(245,166,35,0.38), inset 0 1px 0 rgba(255,255,255,0.25);
+  transition: transform 0.14s;
+}
+.fab:active { transform: scale(0.9); }
+.fab svg { width: 28px; height: 28px; }
+
+.hero {
+  position: relative; overflow: hidden;
+  border-radius: 24px; padding: 26px 24px 24px; margin-bottom: 26px;
+  background: linear-gradient(145deg, #f7b733 0%, var(--accent) 42%, var(--accent-deep) 100%);
+  color: var(--on-accent);
+  box-shadow: 0 16px 40px -12px rgba(224,133,26,0.5);
+}
+.hero::before {
+  content: ''; position: absolute; top: -50px; right: -40px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.22), transparent 70%);
+}
+.hero::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.06; mix-blend-mode: overlay; pointer-events: none;
+}
+.hero-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; opacity: 0.65; position: relative; }
+.hero-amount { font-family: var(--display); font-size: 46px; font-weight: 600; letter-spacing: -1.5px; line-height: 1.04; margin: 6px 0 2px; position: relative; }
+.hero-amount .cur { font-size: 28px; font-weight: 500; opacity: 0.7; margin-right: 2px; }
+.hero-sub { font-size: 13px; opacity: 0.7; font-weight: 500; position: relative; }
+.hero-meter { position: relative; margin-top: 18px; height: 7px; border-radius: 99px; background: rgba(42,28,8,0.18); overflow: hidden; }
+.hero-meter > i { display: block; height: 100%; border-radius: 99px; background: var(--on-accent); transition: width 0.5s cubic-bezier(0.22,1,0.36,1); }
+.hero-meter.over > i { background: #7a1e14; }
+.hero-foot { position: relative; font-size: 12px; font-weight: 600; opacity: 0.85; margin-top: 8px; display: flex; justify-content: space-between; }
+.hero-empty { position: relative; font-size: 13px; opacity: 0.7; font-style: italic; margin-top: 10px; }
+
+.section { display: flex; align-items: baseline; justify-content: space-between; margin: 0 6px 12px; }
+.section-title { font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }
+.section-meta { font-size: 12px; color: var(--ink3); font-variant-numeric: tabular-nums; }
+
+.cat-card {
+  position: relative;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 11px;
+  cursor: pointer; display: flex; align-items: center; gap: 15px;
+  user-select: none; -webkit-user-select: none;
+  transition: transform 0.12s, background 0.15s, border-color 0.15s;
+}
+.cat-card:active { background: var(--surface2); }
+.cat-card.pressing { border-color: var(--accent); background: var(--surface2); transform: scale(0.985); }
+.cat-icon {
+  width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 22px; position: relative;
+}
+.cat-info { flex: 1; min-width: 0; }
+.cat-name { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.1px; }
+.cat-meta { font-size: 12px; color: var(--ink2); margin-top: 3px; }
+.cat-bar-wrap { height: 4px; background: rgba(245,222,179,0.08); border-radius: 99px; overflow: hidden; margin-top: 9px; }
+.cat-bar { height: 100%; border-radius: 99px; }
+.cat-right { text-align: right; flex-shrink: 0; }
+.cat-amount { font-family: var(--mono); font-size: 16px; font-weight: 600; letter-spacing: -0.5px; }
+.cat-amount.over { color: var(--danger); }
+.cat-amount.ok { color: var(--ink); }
+.cat-limit-txt { font-family: var(--mono); font-size: 11px; color: var(--ink3); margin-top: 3px; }
+
+.detail-hero { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 22px; margin-bottom: 22px; }
+.detail-hero-top { display: flex; align-items: center; gap: 15px; margin-bottom: 16px; }
+.detail-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.detail-catname { font-size: 14px; color: var(--ink2); margin-bottom: 5px; font-weight: 500; }
+.detail-total { font-family: var(--display); font-size: 34px; font-weight: 600; letter-spacing: -1px; line-height: 1; }
+.detail-total.over { color: var(--danger); }
+.over-badge { display: inline-block; background: var(--danger-soft); color: var(--danger); font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px; margin-left: 10px; vertical-align: middle; }
+.detail-limit-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--ink2); margin-bottom: 10px; font-weight: 500; }
+.detail-meter { height: 7px; border-radius: 99px; background: rgba(245,222,179,0.08); overflow: hidden; }
+.detail-meter > i { display: block; height: 100%; border-radius: 99px; }
+.detail-meter-foot { font-family: var(--mono); font-size: 12px; color: var(--ink3); text-align: right; margin-top: 7px; }
+
+.entry-item {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 14px 14px 14px 16px; margin-bottom: 9px;
+  display: flex; align-items: center; gap: 13px;
+}
+.entry-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 4px rgba(245,222,179,0.04); }
+.entry-info { flex: 1; min-width: 0; }
+.entry-desc { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.entry-date { font-size: 11px; color: var(--ink3); margin-top: 3px; font-variant-numeric: tabular-nums; }
+.entry-amount { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: -0.5px; flex-shrink: 0; }
+.entry-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; margin-left: 2px; }
+.entry-btn {
+  background: none; border: none; color: var(--ink3); cursor: pointer;
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; transition: background 0.15s, color 0.15s;
+}
+.entry-btn:active { background: var(--surface3); }
+.entry-btn.del:active { color: var(--danger); }
+.entry-btn.edit:active { color: var(--accent); }
+.entry-btn svg { width: 17px; height: 17px; display: block; }
+
+.empty { text-align: center; padding: 64px 24px; }
+.empty-icon { font-size: 52px; margin-bottom: 14px; opacity: 0.35; }
+.empty p { color: var(--ink2); font-size: 14px; line-height: 1.65; }
+.empty strong { color: var(--accent); }
+
+.toolbar { display: flex; gap: 9px; padding: 6px 16px 4px; justify-content: center; }
+.toolbar-btn {
+  font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: var(--ink2);
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 99px; padding: 9px 16px; cursor: pointer;
+  display: flex; align-items: center; gap: 7px; transition: transform 0.12s, color 0.15s, border-color 0.15s;
+}
+.toolbar-btn:active { transform: scale(0.95); color: var(--accent); border-color: var(--line2); }
+.toolbar-btn svg { width: 15px; height: 15px; }
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(10,7,3,0.62);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  z-index: 100; display: none; align-items: flex-end;
+}
+.modal-overlay.open { display: flex; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--bg-soft); border: 1px solid var(--line2); border-bottom: none;
+  border-radius: 28px 28px 0 0;
+  padding: 8px 22px calc(28px + var(--safe-bottom));
+  width: 100%; max-height: 92dvh; overflow-y: auto;
+  animation: slideUp 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 -20px 60px rgba(0,0,0,0.5);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 40px; height: 4px; background: var(--surface3); border-radius: 99px; margin: 10px auto 22px; }
+.modal-title { font-family: var(--display); font-size: 22px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 6px; }
+.modal-sub { font-size: 13px; color: var(--ink2); margin-bottom: 22px; line-height: 1.4; }
+
+.field { margin-bottom: 16px; }
+.field > label { display: block; font-size: 11px; font-weight: 600; color: var(--ink2); margin-bottom: 8px; letter-spacing: 0.8px; text-transform: uppercase; }
+.field input, .field select {
+  width: 100%; background: var(--surface);
+  border: 1.5px solid var(--line2); border-radius: var(--radius-sm);
+  color: var(--ink); font-family: var(--sans); font-size: 16px; font-weight: 500;
+  padding: 13px 15px; outline: none; transition: border-color 0.15s, background 0.15s;
+  -webkit-appearance: none;
+}
+.field input::placeholder { color: var(--ink3); }
+.field input:focus, .field select:focus { border-color: var(--accent); background: var(--surface2); }
+.field-hint { font-size: 11.5px; color: var(--ink3); margin-top: 7px; line-height: 1.4; }
+
+.emoji-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; }
+.emoji-btn {
+  aspect-ratio: 1; border-radius: 11px; background: var(--surface);
+  border: 2px solid transparent; font-size: 21px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: transform 0.1s, border-color 0.1s, background 0.1s;
+}
+.emoji-btn:active { transform: scale(0.88); }
+.emoji-btn.selected { border-color: var(--accent); background: var(--surface3); }
+
+.color-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+.color-swatch {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2.5px solid transparent; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+}
+.color-swatch.selected { box-shadow: 0 0 0 2.5px var(--bg-soft), 0 0 0 5px currentColor; transform: scale(1.12); }
+
+.btn-row { display: flex; gap: 11px; margin-top: 24px; }
+.btn {
+  flex: 1; padding: 15px; border-radius: var(--radius-sm);
+  font-family: var(--sans); font-size: 15px; font-weight: 600;
+  cursor: pointer; border: none; transition: transform 0.12s, opacity 0.15s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: linear-gradient(150deg, var(--accent), var(--accent-deep)); color: var(--on-accent); box-shadow: 0 4px 16px rgba(245,166,35,0.3); }
+.btn-ghost { background: var(--surface2); color: var(--ink2); border: 1px solid var(--line); }
+.btn-danger-solid { background: linear-gradient(150deg, #ff6e61, #e8453a); color: #fff; box-shadow: 0 4px 16px rgba(255,93,79,0.3); }
+
+.toast {
+  position: fixed; bottom: calc(96px + var(--safe-bottom)); left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface3); border: 1px solid var(--line2);
+  color: var(--ink); padding: 11px 22px; border-radius: 99px;
+  font-size: 13.5px; font-weight: 500; z-index: 200; opacity: 0;
+  transition: opacity 0.25s, transform 0.25s; white-space: nowrap; pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@keyframes riseIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.enter { animation: riseIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+
+.hidden-input { position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div class="header">
+    <div class="header-row">
+      <div>
+        <div class="wordmark">Spendly</div>
+        <div class="sub" id="home-date"></div>
+      </div>
+      <button class="icon-btn" id="btn-add-category" aria-label="Add category">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="scroll" id="home-scroll">
+    <div id="overview-mount"></div>
+    <div class="section">
+      <span class="section-title">Categories</span>
+      <span class="section-meta" id="cat-count"></span>
+    </div>
+    <div id="categories-list"></div>
+    <div class="empty" id="home-empty" style="display:none">
+      <div class="empty-icon">&#128451;&#65039;</div>
+      <p>No categories yet.<br>Tap <strong>+</strong> above to create your first one.</p>
+    </div>
+  </div>
+  <div class="toolbar" id="home-toolbar" style="display:none">
+    <button class="toolbar-btn" id="btn-export">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Export backup
+    </button>
+    <button class="toolbar-btn" id="btn-import">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Import
+    </button>
+    <input type="file" accept="application/json,.json" id="import-input" class="hidden-input">
+  </div>
+  <button class="fab" id="fab-add-expense" aria-label="Add expense" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+</div>
+
+<!-- DETAIL -->
+<div class="screen" id="screen-detail">
+  <div class="header">
+    <div class="header-row">
+      <button class="back-btn" id="btn-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 19l-7-7 7-7"/></svg>
+        Back
+      </button>
+      <div style="display:flex;gap:9px">
+        <button class="icon-btn" id="btn-edit-cat" aria-label="Edit category" style="color:var(--accent)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="icon-btn" id="btn-delete-cat" aria-label="Delete category" style="color:var(--danger)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div id="detail-hero-mount"></div>
+    <div class="section">
+      <span class="section-title">Entries</span>
+      <span class="section-meta" id="entry-count"></span>
+    </div>
+    <div id="entries-list"></div>
+    <div class="empty" id="detail-empty" style="display:none">
+      <div class="empty-icon">&#129534;</div>
+      <p>No entries yet.<br>Tap <strong>+</strong> to log an expense.</p>
+    </div>
+  </div>
+  <button class="fab" id="fab-add-entry" aria-label="Add entry">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+</div>
+
+<!-- MODAL: Category -->
+<div class="modal-overlay" id="modal-category">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-cat-title">New Category</div>
+    <div class="modal-sub" id="modal-cat-sub">Give it a name, an icon, and an optional spending limit.</div>
+    <div class="field">
+      <label>Category Name</label>
+      <input type="text" id="input-cat-name" placeholder="Food, Rent, Fun..." maxlength="30">
+    </div>
+    <div class="field">
+      <label>Icon</label>
+      <div class="emoji-grid" id="emoji-grid"></div>
+    </div>
+    <div class="field">
+      <label>Color</label>
+      <div class="color-grid" id="color-grid"></div>
+    </div>
+    <div class="field">
+      <label>Spending Limit (&#8377;)</label>
+      <input type="number" id="input-cat-limit" placeholder="e.g. 5000" inputmode="decimal">
+      <div class="field-hint">Optional. Category limits add up to your overall monthly budget automatically.</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btn-cat-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-cat-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Expense -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add Expense</div>
+    <div class="modal-sub">Log what you spent and where it goes.</div>
+    <div class="field">
+      <label>Category</label>
+      <select id="input-exp-cat"></select>
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <input type="text" id="input-exp-desc" placeholder="What was it for?" maxlength="60">
+    </div>
+    <div class="field">
+      <label>Amount (&#8377;)</label>
+      <input type="number" id="input-exp-amount" placeholder="0.00" inputmode="decimal" step="0.01">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btn-exp-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-exp-save">Add Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit Entry -->
+<div class="modal-overlay" id="modal-edit-entry">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Edit Entry</div>
+    <div class="modal-sub">Update the description or amount.</div>
+    <div class="field">
+      <label>Description</label>
+      <input type="text" id="input-edit-desc" placeholder="Description" maxlength="60">
+    </div>
+    <div class="field">
+      <label>Amount (&#8377;)</label>
+      <input type="number" id="input-edit-amount" placeholder="0.00" inputmode="decimal" step="0.01">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btn-edit-entry-cancel">Cancel</button>
+      <button class="btn btn-primary" id="btn-edit-entry-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Confirm -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="confirm-title">Are you sure?</div>
+    <div class="modal-sub" id="confirm-msg"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btn-confirm-cancel">Cancel</button>
+      <button class="btn btn-danger-solid" id="btn-confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// DATA LAYER (schema & key unchanged - old backups load as-is)
+const STORAGE_KEY = 'spendly_v2';
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { categories: [], expenses: [] };
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data.categories)) data.categories = [];
+    if (!Array.isArray(data.expenses)) data.expenses = [];
+    return data;
+  } catch (e) {
+    return { categories: [], expenses: [] };
+  }
+}
+function save(data) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  catch (e) { toast('Could not save - storage may be full'); }
+}
+
+let db = load();
+
+// CONSTANTS / HELPERS
+const EMOJIS = ['\uD83C\uDFE0','\uD83C\uDF55','\uD83D\uDE97','\uD83D\uDC8A','\uD83D\uDCDA','\u2708\uFE0F','\uD83C\uDFAE','\uD83D\uDC57','\uD83D\uDCBC','\uD83C\uDFCB\uFE0F','\u2615','\uD83C\uDFAC','\uD83D\uDC3E','\uD83D\uDC87','\uD83D\uDED2','\uD83D\uDCA1','\uD83D\uDCF1','\uD83C\uDF81','\uD83C\uDF7A','\uD83C\uDF3F','\uD83C\uDFB5','\uD83D\uDCB0','\uD83C\uDFD6','\uD83E\uDDD8','\uD83C\uDF54','\u26FD','\uD83D\uDC76','\uD83C\uDF93','\uD83C\uDFE5','\uD83C\uDF10'];
+const COLORS = ['#f5a623','#ff6b4a','#e8556d','#c879e8','#6c8cff','#4ec3c9','#5bbf7a','#d4a017','#ff8fab','#7ed957'];
+const FALLBACK_COLOR = '#f5a623';
+
+let currentCatId = null;
+let selectedEmoji = EMOJIS[0];
+let selectedColor = COLORS[0];
+let editingCatId = null;
+let editingExpId = null;
+
+const $ = (id) => document.getElementById(id);
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function fmt(n) {
+  return '\u20B9' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+function fmtHero(n) {
+  const num = Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return '<span class="cur">\u20B9</span>' + num;
+}
+function fmtDate(ts) {
+  return new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+function catColor(c) { return (c && c.color) ? c.color : FALLBACK_COLOR; }
+function catEmoji(c) { return (c && c.emoji) ? c.emoji : '\uD83D\uDCB0'; }
+
+function catTotal(catId) { return db.expenses.filter(e => e.catId === catId).reduce((s, e) => s + (e.amount || 0), 0); }
+function catCount(catId) { return db.expenses.filter(e => e.catId === catId).length; }
+function totalSpend() { return db.expenses.reduce((s, e) => s + (e.amount || 0), 0); }
+function overallLimit() { return db.categories.reduce((s, c) => s + (c.limit || 0), 0); }
+
+function hexToRgba(hex, a) {
+  try {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  } catch (e) { return 'rgba(245,166,35,' + a + ')'; }
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2300);
+}
+
+// Custom confirm sheet (promise-based)
+let confirmResolve = null;
+function confirmDialog(title, msg, okLabel, danger) {
+  if (okLabel === undefined) okLabel = 'Delete';
+  if (danger === undefined) danger = true;
+  return new Promise(res => {
+    confirmResolve = res;
+    $('confirm-title').textContent = title;
+    $('confirm-msg').textContent = msg;
+    const ok = $('btn-confirm-ok');
+    ok.textContent = okLabel;
+    ok.className = 'btn ' + (danger ? 'btn-danger-solid' : 'btn-primary');
+    openModal('modal-confirm');
+  });
+}
+function resolveConfirm(val) {
+  closeModal('modal-confirm');
+  if (confirmResolve) { confirmResolve(val); confirmResolve = null; }
+}
+$('btn-confirm-cancel').addEventListener('click', () => resolveConfirm(false));
+$('btn-confirm-ok').addEventListener('click', () => resolveConfirm(true));
+$('modal-confirm').addEventListener('click', e => { if (e.target === e.currentTarget) resolveConfirm(false); });
+
+// NAVIGATION
+function navigate(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + screen).classList.add('active');
+}
+function openDetail(catId) { currentCatId = catId; renderDetail(true); navigate('detail'); }
+function openModal(id) { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+
+// RENDER: HOME
+function renderHome(animate) {
+  animate = !!animate;
+  $('home-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const spent = totalSpend();
+  const limit = overallLimit();
+  const hasLimit = limit > 0;
+  const hasCats = db.categories.length > 0;
+
+  const mount = $('overview-mount');
+  let hero = '<div class="hero' + (animate ? ' enter' : '') + '">';
+  hero += '<div class="hero-eyebrow">Total spent</div>';
+  hero += '<div class="hero-amount">' + fmtHero(spent) + '</div>';
+  if (hasLimit) {
+    const pct = Math.min((spent / limit) * 100, 100);
+    const over = spent > limit;
+    hero += '<div class="hero-sub">of ' + fmt(limit) + ' budget</div>';
+    hero += '<div class="hero-meter' + (over ? ' over' : '') + '"><i style="width:' + pct + '%"></i></div>';
+    hero += '<div class="hero-foot"><span>' + (over ? 'Over budget' : pct.toFixed(0) + '% used') + '</span><span>' + (over ? '+' + fmt(spent - limit) : fmt(limit - spent) + ' left') + '</span></div>';
+  } else {
+    hero += '<div class="hero-empty">Add limits to your categories to track an overall budget.</div>';
+  }
+  hero += '</div>';
+  mount.innerHTML = hero;
+
+  $('cat-count').textContent = hasCats ? (db.categories.length + (db.categories.length === 1 ? ' category' : ' categories')) : '';
+
+  const list = $('categories-list');
+  list.innerHTML = '';
+  $('home-empty').style.display = hasCats ? 'none' : 'block';
+  $('fab-add-expense').style.display = hasCats ? 'flex' : 'none';
+  $('home-toolbar').style.display = hasCats ? 'flex' : 'none';
+
+  db.categories.forEach((cat, i) => {
+    const total = catTotal(cat.id);
+    const hasLim = (cat.limit || 0) > 0;
+    const over = hasLim && total > cat.limit;
+    const pct = hasLim ? Math.min((total / cat.limit) * 100, 100) : 0;
+    const count = catCount(cat.id);
+    const color = catColor(cat);
+
+    const card = document.createElement('div');
+    card.className = 'cat-card' + (animate ? ' enter' : '');
+    if (animate) card.style.animationDelay = (i * 45) + 'ms';
+    card.innerHTML =
+      '<div class="cat-icon" style="background:' + hexToRgba(color, 0.16) + '">' + catEmoji(cat) + '</div>' +
+      '<div class="cat-info">' +
+        '<div class="cat-name">' + esc(cat.name) + '</div>' +
+        '<div class="cat-meta">' + count + ' ' + (count === 1 ? 'entry' : 'entries') + (hasLim ? '' : ' \u00B7 no limit') + '</div>' +
+        (hasLim ? '<div class="cat-bar-wrap"><div class="cat-bar" style="width:' + pct + '%;background:' + (over ? 'var(--danger)' : color) + '"></div></div>' : '') +
+      '</div>' +
+      '<div class="cat-right">' +
+        '<div class="cat-amount ' + (over ? 'over' : 'ok') + '">' + fmt(total) + '</div>' +
+        (hasLim ? '<div class="cat-limit-txt">/ ' + fmt(cat.limit) + '</div>' : '') +
+      '</div>';
+
+    attachCardGestures(card, cat.id);
+    list.appendChild(card);
+  });
+}
+
+// Tap vs Long-press vs Scroll (the fix)
+function attachCardGestures(card, catId) {
+  const MOVE_THRESHOLD = 10;
+  let timer = null, startX = 0, startY = 0, moved = false, longPressed = false;
+  const cancel = () => { clearTimeout(timer); timer = null; card.classList.remove('pressing'); };
+
+  card.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    moved = false; longPressed = false;
+    startX = e.clientX; startY = e.clientY;
+    card.classList.add('pressing');
+    timer = setTimeout(() => {
+      if (moved) return;
+      longPressed = true;
+      card.classList.remove('pressing');
+      openEditCategory(catId);
+    }, 500);
+  });
+  card.addEventListener('pointermove', (e) => {
+    if (moved) return;
+    if (Math.abs(e.clientX - startX) > MOVE_THRESHOLD || Math.abs(e.clientY - startY) > MOVE_THRESHOLD) {
+      moved = true; cancel();
+    }
+  });
+  card.addEventListener('pointerup', cancel);
+  card.addEventListener('pointercancel', () => { moved = true; cancel(); });
+  card.addEventListener('pointerleave', cancel);
+  card.addEventListener('click', () => {
+    if (moved || longPressed) { moved = false; longPressed = false; return; }
+    openDetail(catId);
+  });
+}
+
+// RENDER: DETAIL
+function renderDetail(animate) {
+  animate = !!animate;
+  const cat = db.categories.find(c => c.id === currentCatId);
+  if (!cat) { navigate('home'); renderHome(); return; }
+
+  const total = catTotal(cat.id);
+  const hasLimit = (cat.limit || 0) > 0;
+  const over = hasLimit && total > cat.limit;
+  const color = catColor(cat);
+
+  let hero = '<div class="detail-hero' + (animate ? ' enter' : '') + '">' +
+    '<div class="detail-hero-top">' +
+      '<div class="detail-icon" style="background:' + hexToRgba(color, 0.16) + '">' + catEmoji(cat) + '</div>' +
+      '<div style="min-width:0">' +
+        '<div class="detail-catname">' + esc(cat.name) + '</div>' +
+        '<div class="detail-total ' + (over ? 'over' : '') + '">' + fmt(total) + (over ? '<span class="over-badge">Over limit</span>' : '') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="detail-limit-row">' +
+      '<span>' + (hasLimit ? 'Limit \u00B7 ' + fmt(cat.limit) : 'No limit set') + '</span>' +
+      (hasLimit ? '<span style="color:var(--ink3)">' + (over ? '+' + fmt(total - cat.limit) + ' over' : fmt(cat.limit - total) + ' remaining') + '</span>' : '') +
+    '</div>';
+  if (hasLimit) {
+    const pct = Math.min((total / cat.limit) * 100, 100);
+    hero += '<div class="detail-meter"><i style="width:' + pct + '%;background:' + (over ? 'var(--danger)' : color) + '"></i></div>' +
+      '<div class="detail-meter-foot">' + pct.toFixed(0) + '% used</div>';
+  }
+  hero += '</div>';
+  $('detail-hero-mount').innerHTML = hero;
+
+  const expenses = db.expenses.filter(e => e.catId === currentCatId).sort((a, b) => b.ts - a.ts);
+  $('entry-count').textContent = expenses.length ? (expenses.length + (expenses.length === 1 ? ' entry' : ' entries')) : '';
+
+  const listEl = $('entries-list');
+  listEl.innerHTML = '';
+  $('detail-empty').style.display = expenses.length ? 'none' : 'block';
+
+  expenses.forEach((exp, i) => {
+    const item = document.createElement('div');
+    item.className = 'entry-item' + (animate ? ' enter' : '');
+    if (animate) item.style.animationDelay = (i * 35) + 'ms';
+    item.innerHTML =
+      '<div class="entry-dot" style="background:' + color + '"></div>' +
+      '<div class="entry-info">' +
+        '<div class="entry-desc">' + esc(exp.desc) + '</div>' +
+        '<div class="entry-date">' + fmtDate(exp.ts) + '</div>' +
+      '</div>' +
+      '<div class="entry-amount" style="color:' + color + '">' + fmt(exp.amount) + '</div>' +
+      '<div class="entry-actions">' +
+        '<button class="entry-btn edit" aria-label="Edit entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
+        '<button class="entry-btn del" aria-label="Delete entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
+      '</div>';
+    item.querySelector('.edit').addEventListener('click', e => { e.stopPropagation(); openEditEntry(exp.id); });
+    item.querySelector('.del').addEventListener('click', e => { e.stopPropagation(); deleteExpense(exp.id); });
+    listEl.appendChild(item);
+  });
+}
+
+// PICKERS
+function buildEmojiGrid() {
+  const grid = $('emoji-grid');
+  grid.innerHTML = '';
+  EMOJIS.forEach(e => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'emoji-btn' + (e === selectedEmoji ? ' selected' : '');
+    btn.textContent = e;
+    btn.addEventListener('click', () => {
+      selectedEmoji = e;
+      grid.querySelectorAll('.emoji-btn').forEach(b => b.classList.toggle('selected', b.textContent === e));
+    });
+    grid.appendChild(btn);
+  });
+}
+function buildColorGrid() {
+  const grid = $('color-grid');
+  grid.innerHTML = '';
+  COLORS.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch' + (c === selectedColor ? ' selected' : '');
+    sw.style.background = c;
+    sw.style.color = c;
+    sw.addEventListener('click', () => {
+      selectedColor = c;
+      grid.querySelectorAll('.color-swatch').forEach(s => s.classList.toggle('selected', s.style.background === sw.style.background));
+    });
+    grid.appendChild(sw);
+  });
+}
+
+// CATEGORY MODAL
+$('btn-add-category').addEventListener('click', () => {
+  editingCatId = null;
+  selectedEmoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+  selectedColor = COLORS[db.categories.length % COLORS.length];
+  $('modal-cat-title').textContent = 'New Category';
+  $('modal-cat-sub').textContent = 'Give it a name, an icon, and an optional spending limit.';
+  $('input-cat-name').value = '';
+  $('input-cat-limit').value = '';
+  buildEmojiGrid(); buildColorGrid();
+  openModal('modal-category');
+});
+
+function openEditCategory(catId) {
+  const cat = db.categories.find(c => c.id === catId);
+  if (!cat) return;
+  editingCatId = catId;
+  selectedEmoji = catEmoji(cat);
+  selectedColor = catColor(cat);
+  $('modal-cat-title').textContent = 'Edit Category';
+  $('modal-cat-sub').textContent = 'Update the name, icon, color, or limit.';
+  $('input-cat-name').value = cat.name;
+  $('input-cat-limit').value = (cat.limit || 0) > 0 ? cat.limit : '';
+  buildEmojiGrid(); buildColorGrid();
+  openModal('modal-category');
+}
+
+$('btn-edit-cat').addEventListener('click', () => openEditCategory(currentCatId));
+$('btn-cat-cancel').addEventListener('click', () => closeModal('modal-category'));
+$('modal-category').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('modal-category'); });
+
+$('btn-cat-save').addEventListener('click', () => {
+  const name = $('input-cat-name').value.trim();
+  const limitVal = parseFloat($('input-cat-limit').value) || 0;
+  if (!name) { toast('Please enter a category name'); return; }
+
+  if (editingCatId) {
+    const cat = db.categories.find(c => c.id === editingCatId);
+    if (cat) { cat.name = name; cat.emoji = selectedEmoji; cat.color = selectedColor; cat.limit = limitVal; }
+  } else {
+    db.categories.push({ id: uid(), name: name, emoji: selectedEmoji, color: selectedColor, limit: limitVal });
+  }
+  save(db);
+  closeModal('modal-category');
+  renderHome();
+  if (editingCatId && $('screen-detail').classList.contains('active')) renderDetail();
+  toast(editingCatId ? 'Category updated' : 'Category created');
+});
+
+// EXPENSE MODAL
+function openExpenseModal(preCatId) {
+  const sel = $('input-exp-cat');
+  sel.innerHTML = '';
+  db.categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = catEmoji(c) + '  ' + c.name;
+    if (c.id === preCatId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  $('input-exp-desc').value = '';
+  $('input-exp-amount').value = '';
+  openModal('modal-expense');
+}
+
+$('fab-add-expense').addEventListener('click', () => openExpenseModal(null));
+$('fab-add-entry').addEventListener('click', () => openExpenseModal(currentCatId));
+$('btn-exp-cancel').addEventListener('click', () => closeModal('modal-expense'));
+$('modal-expense').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('modal-expense'); });
+
+$('btn-exp-save').addEventListener('click', () => {
+  const catId = $('input-exp-cat').value;
+  const desc = $('input-exp-desc').value.trim();
+  const amount = parseFloat($('input-exp-amount').value);
+  if (!catId) { toast('Please pick a category'); return; }
+  if (!desc) { toast('Please enter a description'); return; }
+  if (!amount || amount <= 0) { toast('Please enter a valid amount'); return; }
+
+  db.expenses.push({ id: uid(), catId: catId, desc: desc, amount: amount, ts: Date.now() });
+  save(db);
+  closeModal('modal-expense');
+  if ($('screen-detail').classList.contains('active')) renderDetail();
+  renderHome();
+  toast('Expense added');
+});
+
+// EDIT ENTRY MODAL
+function openEditEntry(expId) {
+  const exp = db.expenses.find(e => e.id === expId);
+  if (!exp) return;
+  editingExpId = expId;
+  $('input-edit-desc').value = exp.desc;
+  $('input-edit-amount').value = exp.amount;
+  openModal('modal-edit-entry');
+}
+$('btn-edit-entry-cancel').addEventListener('click', () => closeModal('modal-edit-entry'));
+$('modal-edit-entry').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('modal-edit-entry'); });
+
+$('btn-edit-entry-save').addEventListener('click', () => {
+  const exp = db.expenses.find(e => e.id === editingExpId);
+  if (!exp) return;
+  const desc = $('input-edit-desc').value.trim();
+  const amount = parseFloat($('input-edit-amount').value);
+  if (!desc) { toast('Please enter a description'); return; }
+  if (!amount || amount <= 0) { toast('Please enter a valid amount'); return; }
+  exp.desc = desc; exp.amount = amount;
+  save(db);
+  closeModal('modal-edit-entry');
+  renderDetail();
+  toast('Entry updated');
+});
+
+// DELETE (custom confirm sheet)
+async function deleteExpense(id) {
+  const ok = await confirmDialog('Delete this entry?', 'This removes the expense permanently.', 'Delete');
+  if (!ok) return;
+  db.expenses = db.expenses.filter(e => e.id !== id);
+  save(db);
+  renderDetail();
+  toast('Entry deleted');
+}
+
+$('btn-delete-cat').addEventListener('click', async () => {
+  const cat = db.categories.find(c => c.id === currentCatId);
+  if (!cat) return;
+  const n = catCount(cat.id);
+  const ok = await confirmDialog(
+    'Delete "' + cat.name + '"?',
+    n > 0 ? ('This also deletes its ' + n + ' ' + (n === 1 ? 'entry' : 'entries') + '. This cannot be undone.') : 'This cannot be undone.',
+    'Delete'
+  );
+  if (!ok) return;
+  db.categories = db.categories.filter(c => c.id !== currentCatId);
+  db.expenses = db.expenses.filter(e => e.catId !== currentCatId);
+  save(db);
+  navigate('home');
+  renderHome(true);
+  toast('Category deleted');
+});
+
+// BACK
+$('btn-back').addEventListener('click', () => { navigate('home'); renderHome(); });
+
+// EXPORT / IMPORT (same JSON shape - round-trips with old backups)
+$('btn-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'spendly-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Backup downloaded');
+});
+
+$('btn-import').addEventListener('click', () => $('import-input').click());
+$('import-input').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported.categories) || !Array.isArray(imported.expenses)) {
+        toast('That file is not a valid Spendly backup'); return;
+      }
+      const ok = await confirmDialog(
+        'Restore from backup?',
+        'This replaces all current data with the contents of the backup file.',
+        'Restore', false
+      );
+      if (!ok) return;
+      db = { categories: imported.categories, expenses: imported.expenses };
+      save(db);
+      renderHome(true);
+      toast('Data restored from backup');
+    } catch (err) {
+      toast('Could not read that file');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// INIT
+renderHome(true);
+</script>
+</body>
+</html>
